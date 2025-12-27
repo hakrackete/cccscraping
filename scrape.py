@@ -31,11 +31,13 @@ def beep():
         "/usr/share/sounds/freedesktop/stereo/complete.oga"
     ])
 
-'''
-requests the Website and searches for the specific phrase
-also saves the HTML on sucess for later analysis'''
-def check_tickets():
-    r = requests.get(URL, headers=HEADERS, timeout=10)
+def check_tickets(text,url,headers):
+    '''
+    requests the Website and searches for the specific phrase
+
+    also saves the HTML on success for later analysis
+    '''
+    r = requests.get(url, headers=headers, timeout=10)
     r.raise_for_status()
 
     soup = BeautifulSoup(r.text, "html.parser")
@@ -45,28 +47,37 @@ def check_tickets():
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if text not in page_text:
-        print(f"JETZT {URL} at {timestamp}")
+        print(f"JETZT {url} at {timestamp}")
         beep()
         subprocess.Popen([
             "firefox",
             "--new-window",
-            URL
+            url
         ])
         filename = f"responses/secondhand_{timestamp}.html"
         with open(filename, "w",encoding="utf-8") as f:
             f.write(r.text)
         return True
     else:
-        print(f"nicht {URL} at {timestamp}")
+        print(f"nicht {url} at {timestamp}")
         return False
+
+def main(check_interval,text,url,headers = {"User-Agent": "Mozilla/5.0 (ticket-checker; +https://example.com)"}):    
+    '''
+    glues everything together
+
+    scrapes the website every 0 to check_interval seconds
+
+    Parameters:
+        check_interval(int): maximum time between checks
+        text(str): phrase to look for in the html-webpage (e.g. no ticket available)
+        url(str): url to the Marketpage
+        headers(dict): common headers to supply
     
-'''
-glues everything together
-'''
-def main():
+    '''
     while True:
         try:
-            available = check_tickets()
+            available = check_tickets(text,url,headers)
 
             if available:
                 print("🎉 TICKETS MÖGLICHERWEISE VERFÜGBAR!")
@@ -80,4 +91,4 @@ def main():
         time.sleep(random.randint(0,check_interval))
 
 if __name__ == "__main__":
-    main()
+    main(check_interval,text,URL,HEADERS)
